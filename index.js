@@ -1,26 +1,33 @@
-const TelegramBot = require("node-telegram-bot-api");
-const express = require("express");
+import TelegramBot from "node-telegram-bot-api";
+import express from "express";
+import { createClient } from "@supabase/supabase-js";
 
-// Servidor web obrigatório para o Render
 const app = express();
-app.get("/", (req, res) => res.send("Bot está rodando 🚀"));
-app.listen(process.env.PORT || 3000, () => {
-  console.log("Servidor web iniciado");
-});
 
-// Pegando o token das variáveis de ambiente do Render
-const token = process.env.BOT_TOKEN;
+// === CONFIGURAÇÕES ===
+const TOKEN = process.env.BOT_TOKEN;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
-if (!token) {
-  console.error("❌ ERRO: BOT_TOKEN não encontrado! Configure no Render → Environment.");
-  process.exit(1);
-}
+// === CLIENTE SUPABASE ===
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Inicializando o bot
-const bot = new TelegramBot(token, { polling: true });
+// === BOT TELEGRAM ===
+const bot = new TelegramBot(TOKEN, { polling: true });
 
-bot.on("message", (msg) => {
+bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
+  const text = msg.text || "";
 
-  bot.sendMessage(chatId, "Olá! Seu assistente financeiro está online.");
+  // Salvar mensagem no banco
+  await supabase.from("messages").insert({
+    user_id: String(chatId),
+    message: text,
+  });
+
+  bot.sendMessage(chatId, "Mensagem recebida e salva no banco!");
 });
+
+// === RENDER ===
+app.get("/", (req, res) => res.send("Bot rodando!"));
+app.listen(process.env.PORT || 3000);
