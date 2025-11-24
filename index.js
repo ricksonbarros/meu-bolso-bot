@@ -1,33 +1,43 @@
 import TelegramBot from "node-telegram-bot-api";
-import express from "express";
 import { createClient } from "@supabase/supabase-js";
 
-const app = express();
+const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 
-// === CONFIGURAÇÕES ===
-const TOKEN = process.env.BOT_TOKEN;
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
+// Conectar ao Supabase
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
 
-// === CLIENTE SUPABASE ===
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+// Função para interpretar a mensagem
+function parseFinanceMessage(text) {
+  text = text.toLowerCase();
 
-// === BOT TELEGRAM ===
-const bot = new TelegramBot(TOKEN, { polling: true });
+  // pegar o valor (ex: 20, 30.50)
+  const amountMatch = text.match(/(\d+(\.\d+)?)/);
+  if (!amountMatch) return null;
 
-bot.on("message", async (msg) => {
-  const chatId = msg.chat.id;
-  const text = msg.text || "";
+  const amount = parseFloat(amountMatch[1]);
 
-  // Salvar mensagem no banco
-  await supabase.from("messages").insert({
-    user_id: String(chatId),
-    message: text,
-  });
+  // identificar se é gasto ou entrada
+  let type = "";
+  if (text.includes("gastei") || text.includes("paguei")) type = "gasto";
+  if (text.includes("recebi") || text.includes("entrou")) type = "entrada";
+  if (!type) return null;
 
-  bot.sendMessage(chatId, "Mensagem recebida e salva no banco!");
-});
+  // categoria simples (usar palavras-chave)
+  let category = "geral";
+  if (text.includes("uber") || text.includes("taxi")) category = "transporte";
+  if (text.includes("lanche") || text.includes("comida")) category = "alimentação";
+  if (text.includes("aluguel")) category = "moradia";
 
-// === RENDER ===
-app.get("/", (req, res) => res.send("Bot rodando!"));
-app.listen(process.env.PORT || 3000);
+  return {
+    amount,
+    type,
+    category,
+    description: text,
+  };
+}
+
+// Quando o bot recebe mensagem
+bot.on("message", async (msg) =>
