@@ -1,13 +1,17 @@
 {
   "name": "meu-bolso-bot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "node-telegram-bot-api": "^0.61.0",
-    "@supabase/supabase-js": "^2.39.6"
+    "node-telegram-bot-api": "^0.61.2",
+    "@supabase/supabase-js": "^2.45.0",
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
