@@ -2,6 +2,11 @@ import TelegramBot from "node-telegram-bot-api";
 import { createClient } from "@supabase/supabase-js";
 
 // Inicializa bot
+if (!process.env.BOT_TOKEN) {
+  console.error("❌ BOT_TOKEN não definido!");
+  process.exit(1);
+}
+
 const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 
 // Inicializa Supabase
